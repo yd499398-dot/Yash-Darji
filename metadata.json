@@ -1,0 +1,5 @@
+{
+  "name": "Copy of FinSight AI",
+  "description": "An intelligent financial tracker that uses Gemini to automatically categorize transactions and forecast future spending habits based on your history.",
+  "requestFramePermissions": []
+}
