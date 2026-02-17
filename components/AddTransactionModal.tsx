@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { X, Wand2, Loader2 } from 'lucide-react';
+import { X, Wand2, Loader2, DollarSign, Tag, Calendar as CalendarIcon, ArrowRightLeft } from 'lucide-react';
 import { CATEGORIES } from '../constants';
 import { parseTransactionInput } from '../services/geminiService';
 import { Transaction } from '../types';
@@ -16,6 +17,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClose, onSa
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [type, setType] = useState<'expense' | 'income'>('expense');
   const [aiLoading, setAiLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Magic AI Fill
   const handleAIFill = async () => {
@@ -26,8 +28,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClose, onSa
       if (result.amount) setAmount(result.amount.toString());
       if (result.category) setCategory(result.category);
       if (result.type) setType(result.type);
-      // Optional: Update description if AI cleaned it up
-      // if (result.description) setDescription(result.description);
+      
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
     } catch (error) {
       console.error(error);
     } finally {
@@ -37,8 +40,9 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClose, onSa
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!amount || parseFloat(amount) <= 0) return;
     onSave({
-      description,
+      description: description || 'Untitled Transaction',
       amount: parseFloat(amount),
       date,
       category,
@@ -48,103 +52,126 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClose, onSa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 w-full max-w-md rounded-2xl border border-slate-700 shadow-2xl overflow-hidden animate-fade-in-up">
-        <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
-          <h3 className="text-lg font-bold text-white">Add Transaction</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      <div className="bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-800 shadow-2xl overflow-hidden animate-fade-in-up">
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <div>
+            <h3 className="text-xl font-bold text-white">Log Transaction</h3>
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mt-1">Manual or AI entry</p>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
             
             {/* AI Assistant Input */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                Quick Add (AI)
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                Natural Language Assistant
               </label>
-              <div className="flex gap-2">
+              <div className="relative group">
                 <input
                   type="text"
-                  placeholder="e.g., 'Starbucks coffee $5.50'"
-                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  placeholder="e.g., 'Weekly groceries at Whole Foods $120'"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-2xl py-4 pl-5 pr-14 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all text-sm font-medium"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  onBlur={() => { if(description) handleAIFill(); }}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAIFill())}
                 />
                 <button
                   type="button"
                   onClick={handleAIFill}
                   disabled={aiLoading || !description}
-                  className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white p-2 rounded-lg transition-colors"
+                  className={`absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl transition-all shadow-lg ${
+                    showSuccess ? 'bg-emerald-500 text-white' : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                  } disabled:opacity-30`}
                   title="Auto-fill with AI"
                 >
                   {aiLoading ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
                 </button>
               </div>
-              <p className="text-xs text-slate-500">
-                Type a natural phrase and click the wand to auto-fill details.
+              <p className="text-[10px] text-slate-500 italic pl-1">
+                Press Enter to let Gemini identify amount, category, and type.
               </p>
             </div>
 
-            <div className="h-px bg-slate-700 my-4" />
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm text-slate-400">Amount ($)</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <DollarSign size={12} /> Amount
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   required
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+                  placeholder="0.00"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all font-bold text-lg"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                 />
               </div>
-               <div className="space-y-1">
-                <label className="text-sm text-slate-400">Type</label>
+
+               <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <ArrowRightLeft size={12} /> Flow Type
+                </label>
+                <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setType('expense')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${type === 'expense' ? 'bg-slate-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    Expense
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType('income')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${type === 'income' ? 'bg-slate-700 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    Income
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+               <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <CalendarIcon size={12} /> Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500 transition-all text-xs"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <Tag size={12} /> Category
+                </label>
                 <select
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
-                  value={type}
-                  onChange={(e) => setType(e.target.value as 'expense' | 'income')}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500 transition-all text-xs appearance-none cursor-pointer"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
                 >
-                  <option value="expense">Expense</option>
-                  <option value="income">Income</option>
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-sm text-slate-400">Date</label>
-              <input
-                type="date"
-                required
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm text-slate-400">Category</label>
-              <select
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
             <button
               type="submit"
-              className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg mt-6 transition-all transform active:scale-95"
+              className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black py-4 rounded-2xl mt-4 transition-all transform active:scale-[0.98] shadow-xl shadow-cyan-900/20"
             >
-              Save Transaction
+              Confirm Transaction
             </button>
           </form>
         </div>

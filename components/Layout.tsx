@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { LayoutDashboard, List, TrendingUp, PlusCircle } from 'lucide-react';
+import { LayoutDashboard, List, TrendingUp, PlusCircle, PieChart } from 'lucide-react';
 import { AppView } from '../types';
 
 interface LayoutProps {
@@ -40,6 +41,16 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
           >
             <List size={24} />
             <span className="hidden md:block font-medium">Transactions</span>
+          </button>
+
+          <button
+            onClick={() => onChangeView(AppView.BUDGETS)}
+            className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
+              currentView === AppView.BUDGETS ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <PieChart size={24} />
+            <span className="hidden md:block font-medium">Budgets</span>
           </button>
 
           <button

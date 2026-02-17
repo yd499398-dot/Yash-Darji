@@ -1,3 +1,4 @@
+
 export type TransactionType = 'expense' | 'income';
 
 export interface Transaction {
@@ -7,6 +8,11 @@ export interface Transaction {
   date: string;
   category: string;
   type: TransactionType;
+}
+
+export interface CategoryBudget {
+  category: string;
+  limit: number;
 }
 
 export interface FinancialForecast {
@@ -21,5 +27,6 @@ export interface FinancialForecast {
 export enum AppView {
   DASHBOARD = 'DASHBOARD',
   TRANSACTIONS = 'TRANSACTIONS',
-  FORECAST = 'FORECAST'
+  FORECAST = 'FORECAST',
+  BUDGETS = 'BUDGETS'
 }
