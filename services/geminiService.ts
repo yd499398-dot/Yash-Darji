@@ -7,9 +7,12 @@ import { CATEGORIES } from "../constants";
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const MODEL_FAST = 'gemini-3-flash-preview';
+const MODEL_PRO = 'gemini-3-pro-preview';
+// Fix: Use the recommended alias for gemini flash lite
+const MODEL_LITE = 'gemini-flash-lite-latest';
 
 /**
- * Helper to extract JSON from a string that might contain markdown blocks or leading/trailing text.
+ * Helper to extract JSON from a string that might contain markdown blocks.
  */
 const extractJson = (text: string) => {
   try {
@@ -25,7 +28,7 @@ const extractJson = (text: string) => {
 };
 
 /**
- * Parses a natural language input to suggest transaction details.
+ * Parses a natural language input using Flash-Lite for low latency.
  */
 export const parseTransactionInput = async (input: string): Promise<{
   amount?: number;
@@ -35,11 +38,10 @@ export const parseTransactionInput = async (input: string): Promise<{
 }> => {
   try {
     const response = await ai.models.generateContent({
-      model: MODEL_FAST,
+      model: MODEL_LITE,
       contents: `Extract transaction details from this text: "${input}". 
       Available categories: ${CATEGORIES.join(', ')}.
-      If no category fits perfectly, choose 'Other'.
-      Return a JSON object with keys: amount (number), category (string), description (cleaned string), type ('expense' or 'income').`,
+      Return JSON: {amount: number, category: string, description: string, type: 'expense'|'income'}.`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -54,6 +56,7 @@ export const parseTransactionInput = async (input: string): Promise<{
       }
     });
 
+    // Fix: Access response.text property directly
     const text = response.text;
     if (!text) return {};
     return extractJson(text);
@@ -64,31 +67,51 @@ export const parseTransactionInput = async (input: string): Promise<{
 };
 
 /**
- * Analyzes spending history to generate a forecast using Google Search for context.
+ * Suggests a single category using Flash-Lite for speed.
+ */
+export const suggestCategory = async (description: string): Promise<string | null> => {
+  if (!description || description.length < 3) return null;
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_LITE,
+      contents: `Map this description to exactly one of: ${CATEGORIES.join(', ')}.
+      Description: "${description}"
+      Return ONLY the category name.`,
+    });
+
+    // Fix: Access response.text property directly
+    const text = response.text?.trim();
+    if (text && CATEGORIES.includes(text)) {
+      return text;
+    }
+    return null;
+  } catch (error) {
+    console.error("Gemini category suggestion error:", error);
+    return null;
+  }
+};
+
+/**
+ * Generates an advanced forecast with Search Grounding.
  */
 export const generateForecast = async (transactions: Transaction[]): Promise<FinancialForecast> => {
   try {
-    const recentHistory = transactions.slice(0, 50).map(t => 
+    const history = transactions.slice(0, 50).map(t => 
       `${t.date}: ${t.description} - $${t.amount} (${t.category}) [${t.type}]`
     ).join('\n');
 
-    const prompt = `Act as a Senior Financial Advisor. Analyze these recent transactions and provide a forecast for the upcoming month.
-    
-    Use Google Search to factor in:
-    1. Current inflation trends (specifically for food, fuel, or rent).
-    2. Upcoming seasonal spending patterns based on the current date (assume today is ${new Date().toISOString().split('T')[0]}).
-    3. Any economic news that might affect consumer spending.
-    
-    Transactions:
-    ${recentHistory}
+    const prompt = `Act as a Senior Financial Advisor. Today is ${new Date().toISOString().split('T')[0]}.
+    Analyze history and forecast spend. Use Google Search to factor in inflation, season, and trends.
+    History:
+    ${history}
 
-    Return a JSON object exactly with these keys:
+    Return JSON:
     {
       "predictedSpendNextMonth": number,
       "savingsPotential": number,
-      "advice": ["Actionable tip 1", "Actionable tip 2", "Actionable tip 3"],
+      "advice": [string],
       "riskFactor": "Low" | "Medium" | "High",
-      "anomalies": ["Explanation of unusual spending found"]
+      "anomalies": [string]
     }`;
 
     const response = await ai.models.generateContent({
@@ -96,33 +119,28 @@ export const generateForecast = async (transactions: Transaction[]): Promise<Fin
       contents: prompt,
       config: {
         tools: [{googleSearch: {}}],
-        thinkingConfig: { thinkingBudget: 0 } // Faster response for dashboard feel
       }
     });
 
+    // Fix: Access response.text property directly
     const text = response.text;
     if (!text) throw new Error("No response from AI");
     
     const parsedData = extractJson(text) as FinancialForecast;
 
-    // Extract Google Search grounding metadata
-    const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    const searchSources = groundingChunks
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const searchSources = chunks
       .map((chunk: any) => chunk.web)
       .filter((web: any) => web && web.uri && web.title)
       .map((web: any) => ({ title: web.title, uri: web.uri }));
 
-    return {
-      ...parsedData,
-      searchSources
-    };
-
+    return { ...parsedData, searchSources };
   } catch (error) {
     console.error("Gemini forecast error:", error);
     return {
       predictedSpendNextMonth: 0,
       savingsPotential: 0,
-      advice: ["Connect your bank or add more transactions for better AI forecasting."],
+      advice: ["Insufficient data for AI strategic modeling."],
       riskFactor: 'Low',
       anomalies: [],
       searchSources: []

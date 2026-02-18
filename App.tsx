@@ -5,7 +5,9 @@ import DashboardView from './components/DashboardView';
 import TransactionsView from './components/TransactionsView';
 import ForecastView from './components/ForecastView';
 import BudgetView from './components/BudgetView';
+import AILabView from './components/AILabView';
 import AddTransactionModal from './components/AddTransactionModal';
+import Scene3D from './components/Scene3D';
 import { Transaction, AppView, CategoryBudget } from './types';
 import { INITIAL_TRANSACTIONS, CATEGORIES } from './constants';
 
@@ -83,26 +85,31 @@ const App: React.FC = () => {
         return <ForecastView transactions={transactions} />;
       case AppView.BUDGETS:
         return <BudgetView transactions={transactions} budgets={budgets} onUpdateBudget={handleUpdateBudget} />;
+      case AppView.AI_LAB:
+        return <AILabView />;
       default:
         return <DashboardView transactions={transactions} budgets={budgets} />;
     }
   };
 
   return (
-    <Layout 
-      currentView={currentView} 
-      onChangeView={setCurrentView}
-      onAddTransaction={() => setIsModalOpen(true)}
-    >
-      {renderView()}
-      
-      {isModalOpen && (
-        <AddTransactionModal 
-          onClose={() => setIsModalOpen(false)}
-          onSave={handleAddTransaction}
-        />
-      )}
-    </Layout>
+    <>
+      <Scene3D />
+      <Layout 
+        currentView={currentView} 
+        onChangeView={setCurrentView}
+        onAddTransaction={() => setIsModalOpen(true)}
+      >
+        {renderView()}
+        
+        {isModalOpen && (
+          <AddTransactionModal 
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleAddTransaction}
+          />
+        )}
+      </Layout>
+    </>
   );
 };
 
