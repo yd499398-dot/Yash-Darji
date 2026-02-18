@@ -14,7 +14,8 @@
     "@google/genai": "^1.41.0",
     "lucide-react": "^0.574.0",
     "recharts": "^3.7.0",
-    "three": "0.170.0"
+    "three": "0.170.0",
+    "@capacitor/cli": "^8.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

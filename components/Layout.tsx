@@ -64,28 +64,28 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
       </nav>
 
       {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 w-full z-50 px-6 pb-6">
-        <div className="bg-slate-900/80 backdrop-blur-2xl border border-slate-800/50 rounded-[2rem] h-20 flex items-center justify-between px-4 shadow-2xl relative">
+      <nav className="md:hidden fixed bottom-0 w-full z-50 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="bg-slate-900/90 backdrop-blur-2xl border border-slate-800/50 rounded-[2.5rem] h-20 flex items-center justify-between px-4 shadow-2xl relative">
           
           <button 
             onClick={() => onChangeView(AppView.DASHBOARD)}
-            className={`p-3 rounded-2xl transition-all ${currentView === AppView.DASHBOARD ? 'text-cyan-400' : 'text-slate-500'}`}
+            className={`p-3 rounded-2xl transition-all active-scale ${currentView === AppView.DASHBOARD ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-500'}`}
           >
             <LayoutDashboard size={24} />
           </button>
 
           <button 
             onClick={() => onChangeView(AppView.TRANSACTIONS)}
-            className={`p-3 rounded-2xl transition-all ${currentView === AppView.TRANSACTIONS ? 'text-cyan-400' : 'text-slate-500'}`}
+            className={`p-3 rounded-2xl transition-all active-scale ${currentView === AppView.TRANSACTIONS ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-500'}`}
           >
             <List size={24} />
           </button>
 
           {/* Floating Action Button Centered */}
-          <div className="relative -top-10">
+          <div className="relative -top-8">
             <button
               onClick={onAddTransaction}
-              className="w-16 h-16 bg-gradient-to-tr from-cyan-500 to-blue-700 rounded-full flex items-center justify-center shadow-2xl shadow-cyan-500/40 border-4 border-slate-900 transition-transform active:scale-90"
+              className="w-16 h-16 bg-gradient-to-tr from-cyan-500 to-blue-700 rounded-full flex items-center justify-center shadow-2xl shadow-cyan-500/40 border-4 border-slate-950 transition-transform active:scale-90"
             >
               <Plus size={32} className="text-white" strokeWidth={3} />
             </button>
@@ -93,14 +93,14 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
 
           <button 
             onClick={() => onChangeView(AppView.BUDGETS)}
-            className={`p-3 rounded-2xl transition-all ${currentView === AppView.BUDGETS ? 'text-cyan-400' : 'text-slate-500'}`}
+            className={`p-3 rounded-2xl transition-all active-scale ${currentView === AppView.BUDGETS ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-500'}`}
           >
             <PieChart size={24} />
           </button>
 
           <button 
             onClick={() => onChangeView(AppView.AI_LAB)}
-            className={`p-3 rounded-2xl transition-all ${currentView === AppView.AI_LAB ? 'text-cyan-400' : 'text-slate-500'}`}
+            className={`p-3 rounded-2xl transition-all active-scale ${currentView === AppView.AI_LAB ? 'text-cyan-400 bg-cyan-500/10' : 'text-slate-500'}`}
           >
             <Sparkles size={24} />
           </button>
@@ -108,7 +108,10 @@ const Layout: React.FC<LayoutProps> = ({ children, currentView, onChangeView, on
       </nav>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto h-screen p-4 md:p-10 pb-32 md:pb-10 bg-transparent">
+      <main 
+        className="flex-1 overflow-y-auto h-screen p-4 md:p-10 pb-32 md:pb-10 bg-transparent"
+        style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top))' }}
+      >
         <div className="max-w-5xl mx-auto">
           {children}
         </div>
